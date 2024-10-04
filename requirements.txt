@@ -1,0 +1,9 @@
+bs4
+fastapi
+uvicorn
+aiohttp
+python-dotenv
+python-dateutil
+motor
+pydantic
+lxml
