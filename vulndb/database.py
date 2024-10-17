@@ -1,17 +1,21 @@
 from motor.motor_asyncio import AsyncIOMotorClient as aiomongo
 from os import environ as env
+import asyncio
 
 client = aiomongo(env["MONGODB_URL"])
 db = client.vulndb.vulnerabilities
 
 
+async def insert_into_database(doc):
+    if await db.find_one({"vendor": doc["vendor"], "id": doc["id"]}) is None:            
+        await db.insert_one(doc)
+        return 1
+    else:
+        return 0
+
+
 async def insert_vulnerabilities(docs):
-    count = 0
-    for doc in docs:
-        if await db.find_one({"vendor": doc["vendor"], "id": doc["id"]}) is None:
-            await db.insert_one(doc)
-            count += 1
-    return count
+    return sum(await asyncio.gather(*map(lambda x: insert_into_database(x), docs)))
 
 
 async def query_vulnerabilities(vendor: str, limit: int):

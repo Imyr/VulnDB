@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from typing import Optional
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
-from vulndb.scrape import scrape_and_insert, vendor_list
+from vulndb.scrape import process, vendor_dict
 from vulndb.database import query_vulnerabilities
 
 app = FastAPI()
@@ -33,20 +33,20 @@ async def root():
 @app.get("/available_vendors")
 async def vendors():
     return JSONResponse(
-        content=vendor_list, headers={"Access-Control-Allow-Origin": "*"}
+        content=list(vendor_dict), headers={"Access-Control-Allow-Origin": "*"}
     )
 
 
 @app.get("/vulnerabilities/update")
 async def update():
     return JSONResponse(
-        content=f"Updated {await scrape_and_insert()} vulnarabilities.",
+        content=f"Updated {await process()} vulnerabilities.",
         headers={"Access-Control-Allow-Origin": "*"},
     )
 
 
 @app.post("/vulnerabilities/list")
-async def list(query: Optional[VulnerabilityQuery] = None):
+async def lst(query: Optional[VulnerabilityQuery] = None):
     return JSONResponse(
         content=await query_vulnerabilities(
             vendor=query.vendor if query and query.vendor else "",

@@ -1,4 +1,5 @@
 import aiohttp
+import asyncio
 from bs4 import BeautifulSoup as bs
 from dateutil.parser import parse as dtparse
 from vulndb.database import insert_vulnerabilities as insert
@@ -11,16 +12,12 @@ async def scrape(url, params=None):
             return await response.json(content_type=None)
 
 
-vendor_list = ["Cisco", "Microsoft", "NVIDIA"]
-
-
-async def scrape_and_insert():
-    count = 0
+async def cisco():
     # Cisco
     # https://sec.cloudapps.cisco.com/security/center/publicationListing.x
     url = "https://sec.cloudapps.cisco.com/security/center/publicationService.x?sort=-day_sir&limit=20"
     # dict_keys(['identifier', 'title', 'version', 'firstPublished', 'lastPublished', 'workflowStatus', 'id', 'name', 'url', 'severity', 'workarounds', 'cwe', 'erpPubIds', 'cve', 'ciscoBugId', 'status', 'summary', 'totalCount', 'relatedResource'])
-    count += await insert(
+    count = await insert(
         [
             {
                 "vendor": "Cisco",
@@ -35,11 +32,15 @@ async def scrape_and_insert():
         ]
     )
 
+    return count
+
+
+async def microsoft():
     # Microsoft
     # https://msrc.microsoft.com/update-guide/vulnerability
     url = "https://api.msrc.microsoft.com/sug/v2.0/en-IN/vulnerability?$orderBy=cveNumber%20desc&$filter=(releaseDate%20ge%202024-08-01T00:00:00.000Z)"
     # dict_keys(['id', 'releaseDate', 'cveNumber', 'cveTitle', 'releaseNumber', 'vulnType', 'latestRevisionDate', 'description', 'cweList', 'unformattedDescription', 'mitreText', 'mitreUrl', 'latestSoftwareReleaseId', 'olderSoftwareReleaseId', 'denialOfService', 'tag', 'issuingCna', 'severityId', 'impactId', 'langCode', 'isMariner', 'customerActionRequired', 'cweDetailsList', 'articles', 'revisions'])
-    count += await insert(
+    count = await insert(
         [
             {
                 "vendor": "Microsoft",
@@ -54,11 +55,15 @@ async def scrape_and_insert():
         ]
     )
 
+    return count
+
+
+async def nvidia():
     # NVIDIA
     # https://www.nvidia.com/en-us/security/
     url = "https://www.nvidia.com/content/dam/en-zz/Solutions/product-security/product-security.json"
 
-    count += await insert(
+    count = await insert(
         [
             {
                 "vendor": "NVIDIA",
@@ -74,3 +79,13 @@ async def scrape_and_insert():
     )
 
     return count
+
+vendor_dict = {
+    "Cisco": cisco,
+    "Microsoft": microsoft,
+    "NVIDIA": nvidia,
+}
+
+
+async def process():
+    return sum(await asyncio.gather(*map(lambda f: f(), vendor_dict.values())))
