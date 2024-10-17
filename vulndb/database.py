@@ -7,7 +7,7 @@ db = client.vulndb.vulnerabilities
 
 
 async def insert_into_database(doc):
-    if await db.find_one({"vendor": doc["vendor"], "id": doc["id"]}) is None:            
+    if await db.find_one({"vendor": doc["vendor"], "id": doc["id"]}) is None: 
         await db.insert_one(doc)
         return 1
     else:
