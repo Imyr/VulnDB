@@ -4,9 +4,17 @@ from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from vulndb.scrape import process, vendor_dict
 from vulndb.database import query_vulnerabilities
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class VulnerabilityQuery(BaseModel):
     vendor: Optional[str] = ""
@@ -25,15 +33,14 @@ async def root():
                 "/available_vendors",
                 "/vulnerabilities/list {vendor: str, limit: int}",
             ],
-        },
-        headers={"Access-Control-Allow-Origin": "*"},
+        }
     )
 
 
 @app.get("/available_vendors")
 async def vendors():
     return JSONResponse(
-        content=list(vendor_dict), headers={"Access-Control-Allow-Origin": "*"}
+        content=list(vendor_dict)
     )
 
 
@@ -41,7 +48,6 @@ async def vendors():
 async def update():
     return JSONResponse(
         content=f"Updated {await process()} vulnerabilities.",
-        headers={"Access-Control-Allow-Origin": "*"},
     )
 
 
@@ -52,5 +58,4 @@ async def lst(query: Optional[VulnerabilityQuery] = None):
             vendor=query.vendor if query and query.vendor else "",
             limit=query.limit if query and query.limit else 10,
         ),
-        headers={"Access-Control-Allow-Origin": "*"},
     )
